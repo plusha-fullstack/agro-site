@@ -1,0 +1,51 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f7fbf5;
+  margin: 0;
+  padding: 20px;
+}
+
+.header {
+  background: #1f9d3a;
+  padding: 10px;
+}
+
+.nav button {
+  margin-right: 10px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+.chat {
+  background: white;
+  height: 300px;
+  padding: 10px;
+  overflow-y: auto;
+  border-radius: 15px;
+  margin-bottom: 10px;
+}
+
+.msg.user {
+  background: #1f9d3a;
+  color: white;
+  padding: 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  text-align: right;
+}
+
+.msg.bot {
+  background: #e6f3ea;
+  padding: 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
