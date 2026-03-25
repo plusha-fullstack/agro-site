@@ -1,18 +1,23 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const agronom = require("./agronom"); // ✅ правильный путь
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 // AI-Агроном API
-app.post("/agronom", (req, res) => {
-  const { question } = req.body;
-  const answer = agronom.getAnswer(question);
-  res.json({ answer });
+app.post("/agronom", async (req, res) => {
+  const { question, imageBase64, mimeType } = req.body;
+  try {
+    const answer = await agronom.getAnswer(question, imageBase64, mimeType);
+    res.json({ answer });
+  } catch (e) {
+    res.status(500).json({ answer: "Ошибка AI: " + e.message });
+  }
 });
 
 // Корзина

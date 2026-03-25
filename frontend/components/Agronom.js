@@ -9,7 +9,7 @@ export default function Agronom() {
   const div = document.createElement("div");
   div.className = "container";
   div.innerHTML = `
-    <h2 class="section-title fade-in">🤖 AI-Агроном</h2>
+    <h2 class="section-title fade-in"><img src="/images/bot.png" class="section-icon" alt=""> AI-Агроном</h2>
     <p class="subtitle fade-in">Умный помощник для диагностики болезней растений</p>
 
     <div class="agronom-layout fade-in">
@@ -23,7 +23,6 @@ export default function Agronom() {
         <div id="photo-preview" class="photo-preview"></div>
         <textarea id="symptoms" class="symptoms-input" placeholder="Опишите симптомы: что происходит с растением?" rows="3"></textarea>
         <button class="btn btn-full" id="diagnose">Получить диагноз</button>
-        <div class="answer-box" id="answer"></div>
       </div>
 
       <div class="agronom-right">
@@ -46,6 +45,8 @@ export default function Agronom() {
         </div>
       </div>
     </div>
+
+    <div class="answer-box" id="answer"></div>
 
     <div class="fade-in">
       <h3 class="section-title problems-title">🌿 Частые проблемы и решения</h3>
@@ -94,18 +95,34 @@ export default function Agronom() {
   btn.addEventListener("click", async () => {
     const text = symptoms.value.trim();
     if (!text) { answer.style.display = ""; answer.textContent = "Пожалуйста, опишите симптомы."; return; }
+
     answer.style.display = "";
-    answer.textContent = "Анализирую...";
+    answer.innerHTML = "Анализирую...";
+
+    let imageBase64 = null;
+    let mimeType = null;
+    if (photoInput.files.length) {
+      const file = photoInput.files[0];
+      mimeType = file.type;
+      imageBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
     try {
-      const res = await fetch("http://localhost:3000/agronom", {
+      const res = await fetch("http://localhost:3001/agronom", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: text })
+        body: JSON.stringify({ question: text, imageBase64, mimeType })
       });
       const data = await res.json();
-      answer.textContent = data.answer;
+      // Рендерим **жирный текст** из ответа Gemini
+      answer.innerHTML = data.answer.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
     } catch {
-      answer.textContent = "Сервер недоступен. Запустите backend: cd backend && node server.js";
+      answer.innerHTML = "Сервер недоступен.";
     }
   });
 

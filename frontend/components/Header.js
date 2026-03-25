@@ -5,22 +5,19 @@ export default function Header() {
   const currentPath = location.pathname;
 
   const links = [
-    { href: "/", icon: "⌂", label: "О нас" },
-    { href: "/team", icon: "👥", label: "Команда" },
-    { href: "/products", icon: "🧺", label: "Товары" },
-    { href: "/cart", icon: "🛒", label: "Корзина" },
-    { href: "/agronom", icon: "🤖", label: "AI-Агроном" },
+    { href: "/", icon: '<img src="/images/chat.png" class="nav-img" alt="">', label: "О нас" },
+    { href: "/team", icon: '<img src="/images/gardening.png" class="nav-img" alt="">', label: "Команда" },
+    { href: "/products", icon: '<img src="/images/vegetable.png" class="nav-img" alt="">', label: "Товары" },
+    { href: "/cart", icon: '<img src="/images/cart.png" class="nav-img" alt="">', label: "Корзина" },
+    { href: "/agronom", icon: '<img src="/images/bot.png" class="nav-img" alt="">', label: "AI-Агроном" },
   ];
 
   header.innerHTML = `
     <div class="top-bar">
       <div class="top-bar-inner">
         <div class="top-bar-left">
-          <span class="top-bar-brand">🌱 КФХ Чуряева Лариса Николаевна</span>
+          <span class="top-bar-brand"><img src="/images/farm.png" class="top-bar-brand-img" alt=""> КФХ Чуряева Лариса Николаевна</span>
           <span class="top-bar-info">с. Собурово • Качество с 2015 года</span>
-        </div>
-        <div class="top-bar-right">
-          <a href="/cart" data-link class="top-bar-cart">🛒</a>
         </div>
       </div>
     </div>
