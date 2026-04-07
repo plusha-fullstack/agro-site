@@ -1,73 +1,116 @@
-export default function Agronom() {
-  const problems = [
-    { title: "Мучнистая роса", desc: "Белый налёт на листьях. Обработка фунгицидами при первых признаках." },
-    { title: "Тля на смородине", desc: "Скрученные листья, липкий налёт. Используйте инсектициды или мыльный раствор." },
-    { title: "Хлороз листьев", desc: "Пожелтение листьев между жилками. Причина — дефицит железа или магния." },
-    { title: "Парша яблони", desc: "Тёмные пятна на листьях и плодах. Профилактическое опрыскивание весной." },
-  ];
+import { showToast } from "../toast.js";
 
-  const div = document.createElement("div");
-  div.className = "container";
-  div.innerHTML = `
-    <h2 class="section-title fade-in"><img src="/images/bot.png" class="section-icon" alt=""> AI-Агроном</h2>
-    <p class="subtitle fade-in">Умный помощник для диагностики болезней растений</p>
+const HISTORY_KEY = "agro_history";
+
+function parseAnswer(text) {
+  const get = (key) => {
+    const regex = new RegExp(`\\*\\*${key}:\\*\\*\\s*(.+?)(?=\\n\\*\\*|$)`, "s");
+    const m = text.match(regex);
+    return m ? m[1].trim() : "";
+  };
+  return {
+    diagnosis: get("Диагноз"),
+    severity: get("Степень тяжести"),
+    symptoms: get("Описание симптомов"),
+    treatment: get("Рекомендации по лечению"),
+  };
+}
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveHistory(history) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("ru-RU") + ", " + d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+}
+
+function severityClass(severity) {
+  if (severity === "Высокая") return "severity-high";
+  if (severity === "Средняя") return "severity-medium";
+  return "severity-low";
+}
+
+export default function Agronom() {
+  const el = document.createElement("div");
+  el.className = "container";
+
+  el.innerHTML = `
+    <h2 class="section-title fade-in">AI-Агроном</h2>
+    <p class="subtitle fade-in">Диагностика болезней и вредителей растений</p>
 
     <div class="agronom-layout fade-in">
       <div class="agronom-left">
         <h3>📷 Загрузите фото растения</h3>
+        <p class="agronom-hint">Сфотографируйте поражённые листья или плоды для точной диагностики</p>
         <div class="upload-zone" id="upload-zone">
-          <div class="upload-icon">📁</div>
-          <p>Перетащите фото сюда или нажмите для выбора</p>
+          <div class="upload-icon">⬆</div>
+          <p>Нажмите для выбора фото</p>
           <input type="file" id="photo-input" accept="image/*" hidden>
         </div>
         <div id="photo-preview" class="photo-preview"></div>
-        <textarea id="symptoms" class="symptoms-input" placeholder="Опишите симптомы: что происходит с растением?" rows="3"></textarea>
-        <button class="btn btn-full" id="diagnose">Получить диагноз</button>
+        <label class="symptoms-label">Опишите симптомы</label>
+        <textarea id="symptoms" class="symptoms-input" placeholder="Например: жёлтые пятна на листьях, скручивание, вредители..." rows="4"></textarea>
+        <button class="btn btn-full" id="diagnose">⚙ Получить диагноз</button>
       </div>
 
       <div class="agronom-right">
         <div class="how-it-works">
-          <h3>❓ Как это работает?</h3>
+          <h3>📖 Как это работает?</h3>
           <div class="steps">
-            <div class="step"><span class="step-num">1</span> Загрузите фото больного растения</div>
-            <div class="step"><span class="step-num">2</span> Опишите симптомы и условия выращивания</div>
-            <div class="step"><span class="step-num">3</span> Получите диагноз и рекомендации по лечению</div>
+            <div class="step">
+              <span class="step-num">1</span>
+              <div>
+                <div class="step-title">Загрузите фото</div>
+                <div class="step-desc">Чёткий снимок поражённого участка растения</div>
+              </div>
+            </div>
+            <div class="step">
+              <span class="step-num">2</span>
+              <div>
+                <div class="step-title">Опишите проблему</div>
+                <div class="step-desc">Когда заметили, какие изменения произошли</div>
+              </div>
+            </div>
+            <div class="step">
+              <span class="step-num">3</span>
+              <div>
+                <div class="step-title">Получите рекомендации</div>
+                <div class="step-desc">AI определит болезнь и даст советы по лечению</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="ai-info">
           <h4>🔍 Что может определить AI?</h4>
           <ul>
             <li>Грибковые заболевания</li>
-            <li>Вирусные инфекции</li>
+            <li>Бактериальные инфекции</li>
+            <li>Вредителей (тля, клещи, и др.)</li>
             <li>Дефицит питательных веществ</li>
-            <li>Повреждения вредителями</li>
           </ul>
         </div>
       </div>
     </div>
 
-    <div class="answer-box" id="answer"></div>
-
-    <div class="fade-in">
-      <h3 class="section-title problems-title">🌿 Частые проблемы и решения</h3>
-      <div class="grid problems-grid">
-        ${problems.map(p => `
-          <div class="card problem-card">
-            <h4>${p.title}</h4>
-            <p>${p.desc}</p>
-          </div>
-        `).join("")}
-      </div>
+    <div class="history-section fade-in">
+      <h3 class="history-title">🕐 История диагностики</h3>
+      <p class="agronom-hint">Все результаты анализов сохраняются здесь</p>
+      <div id="history-list"></div>
     </div>
   `;
 
-  const uploadZone = div.querySelector("#upload-zone");
-  const photoInput = div.querySelector("#photo-input");
-  const preview = div.querySelector("#photo-preview");
-  const btn = div.querySelector("#diagnose");
-  const symptoms = div.querySelector("#symptoms");
-  const answer = div.querySelector("#answer");
-  answer.style.display = "none";
+  const uploadZone = el.querySelector("#upload-zone");
+  const photoInput = el.querySelector("#photo-input");
+  const preview = el.querySelector("#photo-preview");
+  const btn = el.querySelector("#diagnose");
+  const symptoms = el.querySelector("#symptoms");
+  const historyList = el.querySelector("#history-list");
 
   uploadZone.addEventListener("click", () => photoInput.click());
   uploadZone.addEventListener("dragover", e => { e.preventDefault(); uploadZone.classList.add("drag-over"); });
@@ -92,24 +135,54 @@ export default function Agronom() {
     reader.readAsDataURL(file);
   }
 
+  function renderHistory() {
+    const history = loadHistory();
+    if (!history.length) {
+      historyList.innerHTML = `<p class="history-empty">Диагнозов пока нет. Загрузите фото и опишите симптомы.</p>`;
+      return;
+    }
+    historyList.innerHTML = history.map(item => `
+      <div class="history-card">
+        <div class="history-card-header">
+          <span class="history-diagnosis">${item.diagnosis || "Диагноз"}</span>
+          ${item.severity ? `<span class="severity-badge ${severityClass(item.severity)}">${item.severity} степень</span>` : ""}
+        </div>
+        <div class="history-date">📅 ${formatDate(item.date)}</div>
+        ${item.imageDataUrl ? `<img class="history-image" src="${item.imageDataUrl}" alt="Фото">` : ""}
+        ${item.symptoms ? `
+          <div class="history-field">
+            <div class="history-field-label">📋 Описание симптомов:</div>
+            <div>${item.symptoms}</div>
+          </div>` : ""}
+        ${item.treatment ? `
+          <div class="history-field">
+            <div class="history-field-label">💊 Рекомендации по лечению:</div>
+            <div>${item.treatment}</div>
+          </div>` : ""}
+      </div>
+    `).join("");
+  }
+
   btn.addEventListener("click", async () => {
     const text = symptoms.value.trim();
-    if (!text) { answer.style.display = ""; answer.textContent = "Пожалуйста, опишите симптомы."; return; }
+    if (!text) { showToast("Пожалуйста, опишите симптомы"); return; }
 
-    answer.style.display = "";
-    answer.innerHTML = "Анализирую...";
+    btn.disabled = true;
+    btn.textContent = "Анализирую...";
+    showToast("Анализ начат — ожидайте результат");
 
     let imageBase64 = null;
     let mimeType = null;
+    let imageDataUrl = null;
     if (photoInput.files.length) {
       const file = photoInput.files[0];
       mimeType = file.type;
-      imageBase64 = await new Promise((resolve, reject) => {
+      imageDataUrl = await new Promise(resolve => {
         const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result.split(",")[1]);
-        reader.onerror = reject;
+        reader.onload = e => resolve(e.target.result);
         reader.readAsDataURL(file);
       });
+      imageBase64 = imageDataUrl.split(",")[1];
     }
 
     try {
@@ -119,12 +192,26 @@ export default function Agronom() {
         body: JSON.stringify({ question: text, imageBase64, mimeType })
       });
       const data = await res.json();
-      // Рендерим **жирный текст** из ответа Gemini
-      answer.innerHTML = data.answer.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+      const parsed = parseAnswer(data.answer);
+
+      const history = loadHistory();
+      history.unshift({ ...parsed, imageDataUrl, date: new Date().toISOString() });
+      if (history.length > 20) history.pop();
+      saveHistory(history);
+
+      renderHistory();
+      symptoms.value = "";
+      preview.innerHTML = "";
+      photoInput.value = "";
+      showToast(parsed.diagnosis ? `Диагноз: ${parsed.diagnosis}` : "Диагноз получен");
     } catch {
-      answer.innerHTML = "Сервер недоступен.";
+      showToast("Сервер недоступен");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "⚙ Получить диагноз";
     }
   });
 
-  return div;
+  renderHistory();
+  return el;
 }

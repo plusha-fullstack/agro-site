@@ -1,4 +1,5 @@
 import { store } from "../store.js";
+import { showToast } from "../toast.js";
 
 export default function Products() {
   const products = [
@@ -75,6 +76,7 @@ export default function Products() {
       addBtn.style.display = "none";
       counter.style.display = "";
       qtySpan.textContent = "1";
+      showToast(`${product.name} добавлен в корзину`);
     });
 
     wrap.querySelector(".cart-plus").addEventListener("click", () => {
