@@ -1,5 +1,8 @@
 import { store } from "../store.js";
+import { isLoggedIn, getCurrentUser, authFetch } from "../auth.js";
+import { router } from "../router.js";
 
+const API = "http://localhost:3001";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
 function setFieldError(input, errorEl, message) {
@@ -53,6 +56,14 @@ function openOrderModal(onSuccess) {
   const nameInput  = overlay.querySelector("#order-name");
   const emailInput = overlay.querySelector("#order-email");
   const phoneInput = overlay.querySelector("#order-phone");
+
+  // Предзаполнение из профиля
+  const user = getCurrentUser();
+  if (user) {
+    if (user.name)  nameInput.value  = user.name;
+    if (user.email) emailInput.value = user.email;
+    if (user.phone) phoneInput.value = user.phone;
+  }
   const [nameErr, emailErr, phoneErr] = overlay.querySelectorAll(".field-error");
 
   // Сброс ошибки при вводе
@@ -184,7 +195,17 @@ export default function Cart() {
     });
 
     div.querySelector(".cart-checkout").addEventListener("click", () => {
+      if (!isLoggedIn()) {
+        router.navigate("/auth");
+        return;
+      }
+      const cartItems = store.get().map(i => ({ name: i.name, qty: i.qty, price: i.price }));
+      const total = cartItems.reduce((s, i) => s + parseInt(i.price) * i.qty, 0);
       openOrderModal(() => {
+        authFetch(`${API}/orders`, {
+          method: "POST",
+          body: JSON.stringify({ items: cartItems, total }),
+        }).catch(() => {});
         store.clear();
         showSuccess();
       });

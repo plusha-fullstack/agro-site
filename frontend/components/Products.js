@@ -4,6 +4,7 @@ import { showToast } from "../toast.js";
 export default function Products() {
   const products = [
     {
+      slug: "currant",
       name: "Черная смородина",
       tag: "Ягоды",
       desc: "Свежая ароматная ягода, богатая витамином С. Идеальна для варенья и компотов.",
@@ -11,6 +12,7 @@ export default function Products() {
       photo: "./images/currant.jpg",
     },
     {
+      slug: "antonovka",
       name: "Яблоки «Антоновка»",
       tag: "Фрукты",
       desc: "Классический сорт с кисло-сладким вкусом. Отлично хранится всю зиму.",
@@ -18,6 +20,7 @@ export default function Products() {
       photo: "./images/antonovka.jpg",
     },
     {
+      slug: "white-apple",
       name: "Яблоки «Белый налив»",
       tag: "Фрукты",
       desc: "Ранний летний сорт с нежной мякотью и сладким вкусом.",
@@ -34,13 +37,17 @@ export default function Products() {
     <div class="grid product-grid">
       ${products.map((p, i) => `
         <div class="card product-card fade-in">
-          <div class="product-img-wrap">
-            <img class="product-img" src="${p.photo}" alt="${p.name}">
-          </div>
-          <div class="product-body">
-            <h3>${p.name}</h3>
-            <span class="tag">${p.tag}</span>
-            <p>${p.desc}</p>
+          <a data-link href="/product/${p.slug}" class="product-top-link">
+            <div class="product-img-wrap">
+              <img class="product-img" src="${p.photo}" alt="${p.name}">
+            </div>
+            <div class="product-top-body">
+              <h3>${p.name}</h3>
+              <span class="tag">${p.tag}</span>
+              <p>${p.desc}</p>
+            </div>
+          </a>
+          <div class="product-bottom-body">
             <strong class="price">${p.price}</strong>
             <div class="cart-action" data-index="${i}">
               <button class="btn add-to-cart">В корзину</button>
@@ -63,7 +70,6 @@ export default function Products() {
     const counter = wrap.querySelector(".cart-counter");
     const qtySpan = wrap.querySelector(".cart-qty");
 
-    // Восстановить состояние из store
     const inCart = store.get().find(item => item.name === product.name);
     if (inCart) {
       addBtn.style.display = "none";

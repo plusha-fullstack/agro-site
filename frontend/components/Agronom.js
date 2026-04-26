@@ -1,6 +1,13 @@
 import { showToast } from "../toast.js";
+import { isLoggedIn, authFetch, getCurrentUser } from "../auth.js";
+import { router } from "../router.js";
 
-const HISTORY_KEY = "agro_history";
+const API = "http://localhost:3001";
+
+function historyKey() {
+  const u = getCurrentUser();
+  return u?.id ? `agro_history_${u.id}` : null;
+}
 
 function parseAnswer(text) {
   const get = (key) => {
@@ -17,12 +24,40 @@ function parseAnswer(text) {
 }
 
 function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  const key = historyKey();
+  if (!key) return [];
+  try { return JSON.parse(localStorage.getItem(key)) || []; }
   catch { return []; }
 }
 
 function saveHistory(history) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  const key = historyKey();
+  if (!key) return;
+  localStorage.setItem(key, JSON.stringify(history));
+}
+
+async function syncHistoryFromBackend() {
+  if (loadHistory().length) return false;
+  try {
+    const res = await authFetch(`${API}/agronom-history`);
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (!data.history?.length) return false;
+    const items = data.history.map(row => {
+      let parsed = {};
+      try { parsed = JSON.parse(row.answer_json); } catch {}
+      return {
+        diagnosis: parsed.diagnosis || "",
+        severity: parsed.severity || "",
+        symptoms: parsed.symptoms || "",
+        treatment: parsed.treatment || "",
+        imageDataUrl: row.image_data_url || null,
+        date: row.created_at,
+      };
+    });
+    saveHistory(items);
+    return true;
+  } catch { return false; }
 }
 
 function formatDate(iso) {
@@ -39,6 +74,20 @@ function severityClass(severity) {
 export default function Agronom() {
   const el = document.createElement("div");
   el.className = "container";
+
+  if (!isLoggedIn()) {
+    el.innerHTML = `
+      <h2 class="section-title fade-in">AI-Агроном</h2>
+      <div class="auth-card fade-in" style="text-align:center;padding:48px 32px">
+        <div style="font-size:3rem;margin-bottom:16px">🌿</div>
+        <h3 style="margin-bottom:8px">Только для зарегистрированных пользователей</h3>
+        <p class="agronom-hint" style="margin-bottom:24px">Войдите или создайте аккаунт, чтобы получить доступ к AI-диагностике растений и истории запросов</p>
+        <button class="btn" id="go-login">Войти / Зарегистрироваться</button>
+      </div>
+    `;
+    el.querySelector("#go-login").addEventListener("click", () => router.navigate("/auth"));
+    return el;
+  }
 
   el.innerHTML = `
     <h2 class="section-title fade-in">AI-Агроном</h2>
@@ -135,14 +184,17 @@ export default function Agronom() {
     reader.readAsDataURL(file);
   }
 
-  function renderHistory() {
+  function renderHistory(limit = 5) {
     const history = loadHistory();
     if (!history.length) {
       historyList.innerHTML = `<p class="history-empty">Диагнозов пока нет. Загрузите фото и опишите симптомы.</p>`;
       return;
     }
-    historyList.innerHTML = history.map(item => `
-      <div class="history-card">
+    const visible = history.slice(0, limit);
+    const prevLimit = limit - 5;
+
+    historyList.innerHTML = visible.map((item, idx) => `
+      <div class="history-card${idx >= prevLimit && limit > 5 ? " history-card-new" : ""}">
         <div class="history-card-header">
           <span class="history-diagnosis">${item.diagnosis || "Диагноз"}</span>
           ${item.severity ? `<span class="severity-badge ${severityClass(item.severity)}">${item.severity} степень</span>` : ""}
@@ -161,6 +213,15 @@ export default function Agronom() {
           </div>` : ""}
       </div>
     `).join("");
+
+    if (history.length > limit) {
+      const remaining = history.length - limit;
+      const loadMoreBtn = document.createElement("button");
+      loadMoreBtn.className = "btn load-more-btn";
+      loadMoreBtn.textContent = `Показать ещё (${remaining})`;
+      loadMoreBtn.addEventListener("click", () => renderHistory(limit + 5));
+      historyList.appendChild(loadMoreBtn);
+    }
   }
 
   btn.addEventListener("click", async () => {
@@ -186,7 +247,7 @@ export default function Agronom() {
     }
 
     try {
-      const res = await fetch("http://localhost:3001/agronom", {
+      const res = await fetch(`${API}/agronom`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: text, imageBase64, mimeType })
@@ -198,6 +259,11 @@ export default function Agronom() {
       history.unshift({ ...parsed, imageDataUrl, date: new Date().toISOString() });
       if (history.length > 20) history.pop();
       saveHistory(history);
+
+      authFetch(`${API}/agronom-history`, {
+        method: "POST",
+        body: JSON.stringify({ question: text, answer_json: JSON.stringify(parsed), image_data_url: imageDataUrl || "" }),
+      }).catch(() => {});
 
       renderHistory();
       symptoms.value = "";
@@ -213,5 +279,6 @@ export default function Agronom() {
   });
 
   renderHistory();
+  syncHistoryFromBackend().then(loaded => { if (loaded) renderHistory(); });
   return el;
 }

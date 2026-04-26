@@ -4,7 +4,14 @@ import Team from "./components/Team.js";
 import Products from "./components/Products.js";
 import Cart from "./components/Cart.js";
 import Agronom from "./components/Agronom.js";
+import Articles from "./components/Articles.js";
+import ArticleDetail from "./components/ArticleDetail.js";
+import TeamMember from "./components/TeamMember.js";
+import ProductDetail from "./components/ProductDetail.js";
 import Footer from "./components/Footer.js";
+import Auth from "./components/Auth.js";
+import Profile from "./components/Profile.js";
+import VerifyEmail from "./components/VerifyEmail.js";
 
 const routes = {
   "/": Home,
@@ -12,7 +19,17 @@ const routes = {
   "/products": Products,
   "/cart": Cart,
   "/agronom": Agronom,
+  "/articles": Articles,
+  "/auth": Auth,
+  "/profile": Profile,
+  "/verify-email": VerifyEmail,
 };
+
+const dynamicRoutes = [
+  { pattern: /^\/team\/(.+)$/, component: (slug) => TeamMember(slug) },
+  { pattern: /^\/product\/(.+)$/, component: (slug) => ProductDetail(slug) },
+  { pattern: /^\/articles\/(.+)$/, component: (slug) => ArticleDetail(slug) },
+];
 
 export const router = {
   load() {
@@ -35,14 +52,27 @@ export const router = {
   render(path) {
     const app = document.getElementById("app");
     app.innerHTML = "";
-    const header = Header();
-    app.appendChild(header);
-    const page = routes[path] ? routes[path]() : Home();
+    app.appendChild(Header());
+
+    let page;
+    if (routes[path]) {
+      page = routes[path]();
+    } else {
+      let matched = false;
+      for (const r of dynamicRoutes) {
+        const m = r.pattern.exec(path);
+        if (m) {
+          page = r.component(m[1]);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) page = Home();
+    }
+
     app.appendChild(page);
     app.appendChild(Footer());
 
-    // Запуск анимаций
-    const elements = document.querySelectorAll(".fade-in");
-    elements.forEach(el => el.classList.add("visible"));
+    document.querySelectorAll(".fade-in").forEach(el => el.classList.add("visible"));
   }
 };

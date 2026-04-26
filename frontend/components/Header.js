@@ -1,3 +1,5 @@
+import { isLoggedIn, getCurrentUser } from "../auth.js";
+
 export default function Header() {
   const header = document.createElement("header");
   header.className = "header";
@@ -6,10 +8,14 @@ export default function Header() {
 
   const links = [
     { href: "/", icon: '<img src="/images/chat.png" class="nav-img" alt="">', label: "О нас" },
+    { href: "/articles", icon: "📰", label: "Статьи" },
     { href: "/team", icon: '<img src="/images/gardening.png" class="nav-img" alt="">', label: "Команда" },
     { href: "/products", icon: '<img src="/images/vegetable.png" class="nav-img" alt="">', label: "Товары" },
     { href: "/cart", icon: '<img src="/images/cart.png" class="nav-img" alt="">', label: "Корзина" },
     { href: "/agronom", icon: '<img src="/images/bot.png" class="nav-img" alt="">', label: "AI-Агроном" },
+    isLoggedIn()
+      ? { href: "/profile", icon: "👤", label: getCurrentUser()?.name?.split(" ")[0] || "Кабинет" }
+      : { href: "/auth", icon: "🚪", label: "Войти" },
   ];
 
   header.innerHTML = `
