@@ -24,7 +24,7 @@ app.post("/agronom", async (req, res) => {
     const answer = await agronom.getAnswer(question, imageBase64, mimeType);
     res.json({ answer });
   } catch (e) {
-    res.status(500).json({ answer: "Ошибка AI: " + e.message });
+    res.status(500).json({ error: e.message });
   }
 });
 

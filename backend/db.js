@@ -43,4 +43,13 @@ if (!userCols.includes("email_verified")) db.exec("ALTER TABLE users ADD COLUMN 
 if (!userCols.includes("verify_token"))   db.exec("ALTER TABLE users ADD COLUMN verify_token TEXT");
 if (!userCols.includes("verify_expires")) db.exec("ALTER TABLE users ADD COLUMN verify_expires INTEGER");
 
+// Версионируемые миграции через PRAGMA user_version
+const schemaVersion = db.pragma("user_version", { simple: true });
+if (schemaVersion < 1) {
+  // v1: смена формата ответа AI-агронома (диагностика → identify/qa/off_topic).
+  // Старые записи несовместимы — сносим, чтобы фронт не пытался рендерить legacy-схему.
+  db.exec("DELETE FROM agronom_history");
+  db.pragma("user_version = 1");
+}
+
 module.exports = db;

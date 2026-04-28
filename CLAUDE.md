@@ -46,7 +46,8 @@ frontend/
                       при успехе — зелёная галка ✓ как при оформлении заказа, авто-закрытие через 1.5 сек.
                       Телефон форматируется и валидируется так же, как в Cart. Истории агронома здесь больше нет.
     Cart.js         — корзина + модалка заказа. Оформление — только авторизованным; поля предзаполняются из профиля
-    Agronom.js      — AI-агроном. Только для авторизованных; показывает заглушку иначе.
+    Agronom.js      — AI-помощник по растениям. Только для авторизованных; показывает заглушку иначе.
+                      Три сценария ответа: identify (определение растения по фото), qa (вопрос про агрономию), off_topic (отказ — toast'ом, не пишется в историю).
                       История: localStorage `agro_history_<userId>` (per-user) + синхронизация с backend POST /agronom-history
     Articles.js / ArticleDetail.js / articles-data.js — каталог статей (6 шт.); данные в articles-data.js
     Team.js / TeamMember.js    — команда (3 человека); данные захардкожены в TeamMember.js
@@ -59,7 +60,7 @@ frontend/
 ```
 backend/
   server.js              — точка входа; монтирует все роутеры
-  agronom.js             — Gemini API (multimodal: текст + изображение)
+  agronom.js             — Gemini API (multimodal: текст + изображение). Возвращает JSON по schema {type, title, summary, sections[]} через responseMimeType=application/json
   auth.js                — Router: POST /auth/register (email-confirm), POST /auth/login,
                            GET /auth/verify?token=, POST /auth/forgot-password,
                            POST /auth/change-password (JWT), GET/PATCH /auth/me
@@ -107,7 +108,7 @@ const dynamicRoutes = [
 - **Auth** (`auth.js`): токен в `localStorage` (`agro_token`), профиль в `agro_user`. `authFetch` — обёртка fetch с `Authorization: Bearer`. `clearAuth()` чистит и `agro_history_*` (чтобы данные одного пользователя не утекали следующему на том же устройстве).
 - **Валидация форм** (Auth, Profile, Cart): на формах стоит `novalidate`, валидация только в JS — иначе браузер показывает свои англоязычные тултипы (`Please include an '@'…`). `EMAIL_RE` и форматтер телефона `+7 (xxx) xxx-xx-xx` — общий паттерн (см. Cart.js, продублирован в Profile.js).
 - **Store** (`store.js`): корзина в `localStorage` (`agro_cart`).
-- **История агронома**: `parseAnswer(text)` разбирает ответ Gemini по маркерам `**Поле:**`. Бейдж степени: Лёгкая (зелёный) / Средняя (жёлтый) / Высокая (красный). Ключ localStorage — `agro_history_<userId>`, не глобальный, чтобы не показывать чужие диагнозы при смене аккаунта на одном устройстве.
+- **История агронома**: ответ Gemini приходит уже в виде структурированного JSON `{type, title, summary, sections:[{heading, icon, items[]}]}`. Бейдж типа: 📷 Растение (identify) / 💬 Вопрос (qa). off_topic в историю не сохраняется — выводится toast'ом. Ключ localStorage — `agro_history_<userId>`, не глобальный, чтобы не показывать чужие записи при смене аккаунта на одном устройстве. Записи без поля `type` (legacy) фильтруются на загрузке.
 - **Layout**: top-bar (#009d3e) → nav-bar (белый) → page content → footer (#009d3e)
 
 ## Auth-флоу
