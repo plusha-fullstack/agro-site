@@ -4,6 +4,9 @@ import { router } from "../router.js";
 
 const API = "http://localhost:3001";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+const STEP = 10;   // шаг +/- (оптовые продажи)
+const MIN = 1;     // меньше — товар убирается из корзины
+const MAX = 1000;  // лимит 1 тонна на товар
 
 function setFieldError(input, errorEl, message) {
   input.classList.add("input-error");
@@ -149,7 +152,7 @@ export default function Cart() {
             </div>
             <div class="cart-item-controls">
               <button class="cart-item-btn cart-item-minus">−</button>
-              <span class="cart-item-qty">${item.qty}</span>
+              <input class="cart-item-qty-input" type="text" inputmode="numeric" value="${item.qty}">
               <button class="cart-item-btn cart-item-plus">+</button>
             </div>
             <span class="cart-item-total">${parseInt(item.price) * item.qty} ₽</span>
@@ -177,14 +180,25 @@ export default function Cart() {
       const item = store.get().find(i => i.name === name);
 
       card.querySelector(".cart-item-minus").addEventListener("click", () => {
-        const newQty = item.qty - 1;
-        if (newQty < 1) store.remove(name);
+        const newQty = item.qty - STEP;
+        if (newQty < MIN) store.remove(name);
         else store.add(item, newQty);
         render();
       });
 
       card.querySelector(".cart-item-plus").addEventListener("click", () => {
-        store.add(item, Math.min(item.qty + 1, 100));
+        store.add(item, Math.min(item.qty + STEP, MAX));
+        render();
+      });
+
+      const qtyInput = card.querySelector(".cart-item-qty-input");
+      qtyInput.addEventListener("input", () => {
+        qtyInput.value = qtyInput.value.replace(/\D/g, "").slice(0, 4);
+      });
+      qtyInput.addEventListener("change", () => {
+        let v = parseInt(qtyInput.value, 10);
+        if (isNaN(v) || v < MIN) v = MIN;  // удаление — через кнопку корзины
+        store.add(item, Math.min(v, MAX));
         render();
       });
 

@@ -1,6 +1,16 @@
 import { store } from "../store.js";
 import { showToast } from "../toast.js";
 
+const STEP = 10;   // шаг +/- (оптовые продажи)
+const MIN = 1;     // меньше — товар убирается из корзины
+const MAX = 1000;  // лимит 1 тонна на товар
+
+function clampQty(value) {
+  let v = parseInt(String(value).replace(/\D/g, ""), 10);
+  if (isNaN(v)) v = MIN;
+  return Math.max(MIN, Math.min(v, MAX));
+}
+
 export default function Products() {
   const products = [
     {
@@ -53,7 +63,7 @@ export default function Products() {
               <button class="btn add-to-cart">В корзину</button>
               <div class="cart-counter" style="display:none">
                 <button class="btn cart-minus">−</button>
-                <span class="cart-qty-wrap"><span class="cart-qty">1</span> кг</span>
+                <span class="cart-qty-wrap"><input class="cart-qty-input" type="text" inputmode="numeric" value="10"><span class="cart-qty-unit">кг</span></span>
                 <button class="btn cart-plus">+</button>
               </div>
             </div>
@@ -68,41 +78,54 @@ export default function Products() {
     const product = products[i];
     const addBtn = wrap.querySelector(".add-to-cart");
     const counter = wrap.querySelector(".cart-counter");
-    const qtySpan = wrap.querySelector(".cart-qty");
+    const qtyInput = wrap.querySelector(".cart-qty-input");
+
+    function setQty(qty) {
+      qtyInput.value = qty;
+      store.add(product, qty);
+    }
 
     const inCart = store.get().find(item => item.name === product.name);
     if (inCart) {
       addBtn.style.display = "none";
       counter.style.display = "";
-      qtySpan.textContent = inCart.qty;
+      qtyInput.value = inCart.qty;
     }
 
     addBtn.addEventListener("click", () => {
-      store.add(product, 1);
+      store.add(product, STEP);
       addBtn.style.display = "none";
       counter.style.display = "";
-      qtySpan.textContent = "1";
+      qtyInput.value = STEP;
       showToast(`${product.name} добавлен в корзину`);
     });
 
     wrap.querySelector(".cart-plus").addEventListener("click", () => {
-      let qty = parseInt(qtySpan.textContent) + 1;
-      if (qty > 100) qty = 100;
-      qtySpan.textContent = qty;
-      store.add(product, qty);
+      setQty(Math.min(clampQty(qtyInput.value) + STEP, MAX));
     });
 
     wrap.querySelector(".cart-minus").addEventListener("click", () => {
-      let qty = parseInt(qtySpan.textContent) - 1;
-      if (qty < 1) {
+      const qty = clampQty(qtyInput.value) - STEP;
+      if (qty < MIN) {
         store.remove(product.name);
         addBtn.style.display = "";
         counter.style.display = "none";
       } else {
-        qtySpan.textContent = qty;
-        store.add(product, qty);
+        setQty(qty);
       }
     });
+
+    // Клик по зелёной области (число / кг / карандаш) — фокус и выделение
+    wrap.querySelector(".cart-qty-wrap").addEventListener("click", () => {
+      qtyInput.focus();
+      qtyInput.select();
+    });
+
+    // Прямой ввод количества
+    qtyInput.addEventListener("input", () => {
+      qtyInput.value = qtyInput.value.replace(/\D/g, "").slice(0, 4);
+    });
+    qtyInput.addEventListener("change", () => setQty(clampQty(qtyInput.value)));
   });
 
   return div;

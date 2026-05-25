@@ -1,5 +1,6 @@
 import { isLoggedIn, getCurrentUser, clearAuth, authFetch, setAuth } from "../auth.js";
 import { router } from "../router.js";
+import { showToast } from "../toast.js";
 
 const API = "http://localhost:3001";
 
@@ -24,6 +25,7 @@ function greeting(user) {
 const ICON_USER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`;
 const ICON_CART = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 12.3a2 2 0 0 0 2 1.7h8.2a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>`;
 const ICON_LOGOUT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h12"/></svg>`;
+const ICON_REPEAT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>`;
 
 function openChangePasswordModal() {
   const overlay = document.createElement("div");
@@ -262,30 +264,58 @@ export default function Profile() {
   // Смена пароля
   el.querySelector("#pf-change-password").addEventListener("click", openChangePasswordModal);
 
-  // Загрузка заказов
-  authFetch(`${API}/orders`).then(r => r.json()).then(data => {
+  // Загрузка и отрисовка заказов (переиспользуется после «Повторить заказ»)
+  function loadOrders() {
     const container = el.querySelector("#orders-list");
     const count = el.querySelector("#orders-count");
-    if (!data.orders?.length) {
-      container.innerHTML = `<p class="profile-empty">Заказов пока нет</p>`;
-      return;
-    }
-    count.textContent = data.orders.length;
-    count.hidden = false;
-    container.innerHTML = data.orders.map(o => `
-      <div class="order-card">
-        <div class="order-card-header">
-          <span class="order-date">${formatDate(o.created_at)}</span>
-          <span class="order-total">${o.total} ₽</span>
+    authFetch(`${API}/orders`).then(r => r.json()).then(data => {
+      if (!data.orders?.length) {
+        container.innerHTML = `<p class="profile-empty">Заказов пока нет</p>`;
+        count.hidden = true;
+        return;
+      }
+      count.textContent = data.orders.length;
+      count.hidden = false;
+      container.innerHTML = data.orders.map((o, idx) => `
+        <div class="order-card">
+          <div class="order-card-header">
+            <span class="order-date">${formatDate(o.created_at)}</span>
+            <div class="order-card-actions">
+              <span class="order-total">${o.total} ₽</span>
+              <button class="order-repeat-btn" data-idx="${idx}" title="Повторить заказ">
+                ${ICON_REPEAT}<span>Повторить</span>
+              </button>
+            </div>
+          </div>
+          <ul class="order-items">
+            ${o.items.map(i => `<li><span class="order-item-name">${i.name}</span><span class="order-item-qty">${i.qty} кг</span></li>`).join("")}
+          </ul>
         </div>
-        <ul class="order-items">
-          ${o.items.map(i => `<li><span class="order-item-name">${i.name}</span><span class="order-item-qty">${i.qty} кг</span></li>`).join("")}
-        </ul>
-      </div>
-    `).join("");
-  }).catch(() => {
-    el.querySelector("#orders-list").innerHTML = `<p class="profile-empty">Не удалось загрузить заказы</p>`;
-  });
+      `).join("");
+
+      container.querySelectorAll(".order-repeat-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const order = data.orders[+btn.dataset.idx];
+          btn.disabled = true;
+          authFetch(`${API}/orders`, {
+            method: "POST",
+            body: JSON.stringify({ items: order.items, total: order.total }),
+          }).then(r => {
+            if (!r.ok) throw new Error();
+            showToast("Заказ повторён");
+            loadOrders();
+          }).catch(() => {
+            btn.disabled = false;
+            showToast("Не удалось повторить заказ");
+          });
+        });
+      });
+    }).catch(() => {
+      container.innerHTML = `<p class="profile-empty">Не удалось загрузить заказы</p>`;
+    });
+  }
+
+  loadOrders();
 
   return el;
 }

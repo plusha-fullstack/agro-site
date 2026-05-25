@@ -4,6 +4,82 @@ import { router } from "../router.js";
 const API = "http://localhost:3001";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
+function openConsentModal() {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal modal--doc">
+      <button class="modal-close" title="Закрыть">×</button>
+      <div class="doc-content">
+        <h3>Пользовательское соглашение и согласие на обработку персональных данных</h3>
+        <p class="doc-meta">Редакция от 25 мая 2026 г.</p>
+
+        <p>Настоящее Соглашение регулирует отношения между Крестьянским (фермерским)
+        хозяйством Чуряева (далее — «Оператор») и физическим лицом (далее — «Пользователь»),
+        использующим сайт Оператора для оформления заказов на сельскохозяйственную продукцию.</p>
+
+        <h4>1. Общие положения</h4>
+        <p>Регистрируясь на сайте и проставляя отметку о согласии, Пользователь подтверждает,
+        что ознакомился с условиями настоящего Соглашения, принимает их в полном объёме и
+        даёт согласие на обработку своих персональных данных в соответствии с Федеральным
+        законом от 27.07.2006 № 152-ФЗ «О персональных данных».</p>
+
+        <h4>2. Оператор персональных данных</h4>
+        <p>КФХ Чуряева, Орловская область. Контакт для обращений по вопросам обработки
+        персональных данных: <a href="mailto:info@kfh-churyaeva.ru">info@kfh-churyaeva.ru</a>.</p>
+
+        <h4>3. Перечень обрабатываемых данных</h4>
+        <ul>
+          <li>фамилия, имя, отчество;</li>
+          <li>адрес электронной почты;</li>
+          <li>контактный номер телефона;</li>
+          <li>регион и адрес доставки;</li>
+          <li>сведения о составе и истории заказов.</li>
+        </ul>
+
+        <h4>4. Цели обработки</h4>
+        <ul>
+          <li>регистрация и идентификация Пользователя в личном кабинете;</li>
+          <li>оформление, обработка и доставка заказов;</li>
+          <li>связь с Пользователем по вопросам заказов;</li>
+          <li>исполнение требований законодательства РФ.</li>
+        </ul>
+
+        <h4>5. Условия обработки</h4>
+        <p>Обработка осуществляется как с использованием средств автоматизации, так и без них.
+        Оператор не передаёт персональные данные третьим лицам, за исключением случаев,
+        необходимых для доставки заказа, и случаев, предусмотренных законодательством РФ.
+        Оператор принимает необходимые организационные и технические меры для защиты данных
+        от неправомерного доступа, изменения и уничтожения.</p>
+
+        <h4>6. Срок обработки</h4>
+        <p>Персональные данные обрабатываются до достижения целей обработки либо до отзыва
+        согласия Пользователем. Согласие может быть отозвано в любой момент путём направления
+        письменного обращения на электронную почту Оператора.</p>
+
+        <h4>7. Права Пользователя</h4>
+        <p>Пользователь вправе получать информацию об обработке своих данных, требовать их
+        уточнения, блокирования или уничтожения, а также отозвать согласие на обработку.</p>
+
+        <p style="margin-top:16px">Проставляя отметку, Пользователь подтверждает своё
+        совершеннолетие и достоверность предоставленных данных.</p>
+      </div>
+      <button class="btn btn-full" id="doc-accept" style="margin-top:16px">Понятно</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("modal-visible"));
+
+  function close() {
+    overlay.classList.remove("modal-visible");
+    overlay.addEventListener("transitionend", () => overlay.remove(), { once: true });
+  }
+
+  overlay.querySelector(".modal-close").addEventListener("click", close);
+  overlay.querySelector("#doc-accept").addEventListener("click", close);
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+}
+
 export default function Auth() {
   const el = document.createElement("div");
   el.className = "container";
@@ -55,6 +131,13 @@ export default function Auth() {
           <input type="password" id="reg-confirm" placeholder="Повторите пароль" autocomplete="new-password">
           <span class="field-error"></span>
         </div>
+        <div class="consent-row">
+          <input type="checkbox" id="reg-consent" class="consent-checkbox">
+          <label for="reg-consent" class="consent-label">
+            Я принимаю условия <a href="#" id="consent-link">пользовательского соглашения</a> и даю согласие на обработку персональных данных
+          </label>
+        </div>
+        <span class="field-error consent-error" id="reg-consent-error"></span>
         <div class="auth-server-error" id="reg-error"></div>
         <button type="submit" class="btn btn-full">Зарегистрироваться</button>
       </form>
@@ -116,6 +199,17 @@ export default function Auth() {
   });
   el.querySelector("#pending-back").addEventListener("click", () => {
     tabs[0].click();
+  });
+
+  // Открытие пользовательского соглашения
+  el.querySelector("#consent-link").addEventListener("click", e => {
+    e.preventDefault();
+    openConsentModal();
+  });
+  const consentEl  = el.querySelector("#reg-consent");
+  const consentErr = el.querySelector("#reg-consent-error");
+  consentEl.addEventListener("change", () => {
+    if (consentEl.checked) consentErr.classList.remove("visible");
   });
 
   function setError(input, span, msg) {
@@ -203,6 +297,11 @@ export default function Auth() {
     if (!EMAIL_RE.test(emailEl.value.trim())) { setError(emailEl, eSpan, "Некорректный email"); valid = false; }
     if (passEl.value.length < 6) { setError(passEl, pSpan, "Минимум 6 символов"); valid = false; }
     if (confirmEl.value !== passEl.value) { setError(confirmEl, cSpan, "Пароли не совпадают"); valid = false; }
+    if (!consentEl.checked) {
+      consentErr.textContent = "Необходимо принять условия соглашения";
+      consentErr.classList.add("visible");
+      valid = false;
+    }
     if (!valid) return;
 
     const btn = formReg.querySelector("button[type=submit]");
