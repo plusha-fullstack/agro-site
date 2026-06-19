@@ -2,7 +2,7 @@ import { store } from "../store.js";
 import { isLoggedIn, getCurrentUser, authFetch } from "../auth.js";
 import { router } from "../router.js";
 
-const API = "http://localhost:3001";
+const API = "";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 const STEP = 10;   // шаг +/- (оптовые продажи)
 const MIN = 1;     // меньше — товар убирается из корзины

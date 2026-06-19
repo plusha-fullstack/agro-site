@@ -1,6 +1,6 @@
 import { router } from "../router.js";
 
-const API = "http://localhost:3001";
+const API = "";
 
 export default function VerifyEmail() {
   const el = document.createElement("div");

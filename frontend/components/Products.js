@@ -18,7 +18,7 @@ export default function Products() {
       name: "Черная смородина",
       tag: "Ягоды",
       desc: "Свежая ароматная ягода, богатая витамином С. Идеальна для варенья и компотов.",
-      price: "250 ₽/кг",
+      price: "280 ₽/кг",
       photo: "./images/currant.jpg",
     },
     {
@@ -36,6 +36,30 @@ export default function Products() {
       desc: "Ранний летний сорт с нежной мякотью и сладким вкусом.",
       price: "100 ₽/кг",
       photo: "./images/white-apple.jpg",
+    },
+    {
+      slug: "night-red",
+      name: "Яблоки «Найдаред»",
+      tag: "Фрукты",
+      desc: "Поздний сорт яблока, с кисло-сладким вкусом.",
+      price: "120 ₽/кг",
+      photo: "./images/night-red.jpg",
+    },
+    {
+      slug: "golden",
+      name: "Яблоки «Голден»",
+      tag: "Фрукты",
+      desc: "Созревают в конце сентября. Насыщенно-сладкий вкус с медовыми нотками.",
+      price: "100 ₽/кг",
+      photo: "./images/golden.png",
+    },
+    {
+      slug: "hanni",
+      name: "Яблоки «Ханни Крисп»",
+      tag: "Фрукты",
+      desc: "Зимний сорт яблони Хани Крисп (Honey Crisp — Медовый хруст) хорошо известен во всём мире.",
+      price: "115 ₽/кг",
+      photo: "./images/hanni.jpg",
     },
   ];
 

@@ -1,7 +1,7 @@
 import { setAuth } from "../auth.js";
 import { router } from "../router.js";
 
-const API = "http://localhost:3001";
+const API = "";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
 function openConsentModal() {

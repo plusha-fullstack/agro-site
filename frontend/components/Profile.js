@@ -2,7 +2,7 @@ import { isLoggedIn, getCurrentUser, clearAuth, authFetch, setAuth } from "../au
 import { router } from "../router.js";
 import { showToast } from "../toast.js";
 
-const API = "http://localhost:3001";
+const API = "";
 
 function formatDate(iso) {
   const d = new Date(iso);
@@ -91,7 +91,7 @@ function openChangePasswordModal() {
     const btn = overlay.querySelector("#cp-submit");
     btn.disabled = true;
     try {
-      const res = await authFetch(`http://localhost:3001/auth/change-password`, {
+      const res = await authFetch(`${API}/auth/change-password`, {
         method: "POST",
         body: JSON.stringify({ newPassword: newEl.value }),
       });

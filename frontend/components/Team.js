@@ -2,9 +2,9 @@ export default function Team() {
   const team = [
     {
       slug: "shinkarev",
-      name: "Шинкарев Вячеслав",
+      name: "Шинкарев Вячеслав Дмитриевич",
       role: "Заместитель управляющего",
-      exp: "22 года в агробизнесе",
+      exp: "2 года в агробизнесе",
       photo: "./images/team1.jpg",
     },
     {
@@ -20,6 +20,20 @@ export default function Team() {
       role: "Специалист по защите растений",
       exp: "12 лет в области фитопатологии",
       photo: "./images/team3.jpg",
+    },
+    {
+      slug: "shelmenkov-nikita",
+      name: "Шельменков Никита Николаевич",
+      role: "Главный механик",
+      exp: "11 лет занимается ремонтом всей техники",
+      photo: "./images/team4.jpg",
+    },
+    {
+      slug: "shelmenkov-nikolay",
+      name: "Шельменков Николай Михайлович",
+      role: "Механизатор",
+      exp: "Управляет всем, что управляется",
+      photo: "./images/team5.jpg",
     },
   ];
 

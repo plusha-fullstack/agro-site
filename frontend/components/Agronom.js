@@ -2,7 +2,7 @@ import { showToast } from "../toast.js";
 import { isLoggedIn, authFetch, getCurrentUser } from "../auth.js";
 import { router } from "../router.js";
 
-const API = "http://localhost:3001";
+const API = "";
 
 function historyKey() {
   const u = getCurrentUser();
